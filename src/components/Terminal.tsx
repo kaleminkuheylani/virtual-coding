@@ -59,7 +59,7 @@ export function Terminal({ onRun }: { onRun: (command: string) => Promise<string
   }
 
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3 shadow-lg shadow-slate-950/30">
+    <section className="rounded-2xl border border-slate-800 bg-slate-900/70  shadow-lg shadow-slate-950/30">
       <h3 className="font-semibold">Terminal</h3>
       <div ref={terminalContainerRef} className="mt-2 h-44 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-2" />
       <div className="mt-2 flex gap-2">

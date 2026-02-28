@@ -12,6 +12,8 @@
     "@monaco-editor/react": "^4.7.0",
     "@supabase/supabase-js": "^2.49.1",
     "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "http-proxy": "^1.18.1",
     "monaco-editor": "^0.52.2",
     "next": "15.0.0",
     "node-pty": "^1.0.0",
@@ -19,9 +21,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "ws": "^8.18.0",
-    "zod": "^3.24.2",
-    "@xterm/xterm": "^5.5.0",
-    "http-proxy": "^1.18.1"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
