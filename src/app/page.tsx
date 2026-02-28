@@ -4,8 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { AIPanel } from "@/components/AIPanel";
 import { Editor } from "@/components/Editor";
-import { FileTree } from "@/components/FileTree";
-import { PlanBadge } from "@/components/PlanBadge";
+import { FileExplorer } from "@/components/fileExplorer";
 import { ProfilePanel } from "@/components/ProfilePanel";
 import { usePlan } from "@/hooks/usePlan";
 
@@ -20,7 +19,6 @@ export default function HomePage() {
   const [showFileTree, setShowFileTree] = useState(true);
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [showTerminal, setShowTerminal] = useState(true);
-  const [runOutput, setRunOutput] = useState("");
 
   async function loadFiles() {
     const response = await fetch("/api/files");
@@ -46,6 +44,15 @@ export default function HomePage() {
     });
   }
 
+  async function createFile(path: string) {
+    await fetch("/api/files", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "save", path, content: "" }),
+    });
+    await loadFiles();
+  }
+
   async function runCommand(command: string): Promise<string> {
     const response = await fetch("/api/terminal/execute", {
       method: "POST",
@@ -57,8 +64,7 @@ export default function HomePage() {
   }
 
   async function runQuickCommand(command: string) {
-    const output = await runCommand(command);
-    setRunOutput(output || "(çıktı yok)");
+    await runCommand(command);
     setShowTerminal(true);
   }
 
@@ -70,7 +76,7 @@ export default function HomePage() {
   }, [showFileTree]);
 
   return (
-    <main className="min-h-screen bg-slate-950  text-slate-100 w-full " onClick={() => setMenu(null)}>
+    <main className="flex h-screen flex-col overflow-hidden bg-[#020617] px-4 pb-4 pt-3 text-slate-100" onClick={() => setMenu(null)}>
       <header className="mb-4 flex rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg shadow-slate-950/30">
         <div className="flex items-center justify-between">
           <div>
@@ -121,10 +127,10 @@ export default function HomePage() {
 
       
 
-      <div className={gridClassName}>
-        {showFileTree && <FileTree files={files} currentFile={currentFile} onOpen={setCurrentFile} />}
+      <div className={`${gridClassName} min-h-0 flex-1`}>
+        {showFileTree && <FileExplorer files={files} currentFile={currentFile} onOpen={setCurrentFile} onCreateFile={createFile} />}
 
-        <div className="space-y-4">
+        <div className="flex min-h-0 flex-col gap-4">
           <Editor value={content} onChange={setContent} />
           {showTerminal && <Terminal onRun={runCommand} />}
         </div>
