@@ -2,10 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export function useTerminalSocket(url: string) {
+export function useTerminalSocket(url: string, onData: (data: string) => void) {
   const wsRef = useRef<WebSocket | null>(null);
+  const onDataRef = useRef(onData);
   const [connected, setConnected] = useState(false);
-  const [output, setOutput] = useState("");
+
+  useEffect(() => {
+    onDataRef.current = onData;
+  }, [onData]);
 
   useEffect(() => {
     const ws = new WebSocket(url);
@@ -14,9 +18,9 @@ export function useTerminalSocket(url: string) {
     ws.onopen = () => setConnected(true);
     ws.onclose = () => setConnected(false);
     ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      if (message.type === "output") {
-        setOutput((prev) => prev + message.data);
+      const message = JSON.parse(event.data as string) as { type: string; data?: string };
+      if (message.type === "output" && message.data) {
+        onDataRef.current(message.data);
       }
     };
 
@@ -24,12 +28,22 @@ export function useTerminalSocket(url: string) {
   }, [url]);
 
   function sendInput(data: string) {
-    wsRef.current?.send(JSON.stringify({ type: "input", data }));
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "input", data }));
+    }
   }
 
-  function sendCommand(data: string) {
-    wsRef.current?.send(JSON.stringify({ type: "command", data }));
+  function sendCommand(data: string, plan?: "free" | "starter" | "pro") {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "command", data, plan }));
+    }
   }
 
-  return { connected, output, sendInput, sendCommand };
+  function sendResize(cols: number, rows: number) {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: "resize", cols, rows }));
+    }
+  }
+
+  return { connected, sendInput, sendCommand, sendResize };
 }
