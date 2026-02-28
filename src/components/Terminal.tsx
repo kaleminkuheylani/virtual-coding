@@ -33,7 +33,12 @@ export function Terminal({
 
     const terminal = new XTerm({
       convertEol: true,
-      fontSize: 12,
+      fontSize: 13,
+      fontFamily: "JetBrains Mono, Fira Code, Menlo, Monaco, monospace",
+      lineHeight: 1.3,
+      scrollback: 2000,
+      cursorStyle: "block",
+      rightClickSelectsWord: true,
       theme: {
         background: "#020617",
         foreground: "#e2e8f0",
@@ -100,10 +105,13 @@ export function Terminal({
     fitAddonRef.current = fitAddon;
 
     const onResize = () => fitAddon.fit();
+    const resizeObserver = new ResizeObserver(() => fitAddon.fit());
+    resizeObserver.observe(terminalContainerRef.current);
     window.addEventListener("resize", onResize);
 
     return () => {
       window.removeEventListener("resize", onResize);
+      resizeObserver.disconnect();
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
@@ -146,7 +154,7 @@ export function Terminal({
       <div
         ref={terminalContainerRef}
         onClick={() => terminalRef.current?.focus()}
-        className={`mt-2 w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950 p-2 ${expanded ? "h-56" : "h-32"}`}
+        className={`terminal-shell mt-2 w-full rounded-lg border border-slate-800 bg-slate-950 ${expanded ? "h-64" : "h-40"}`}
       />
       <div className="mt-2 flex gap-2">
         <input
