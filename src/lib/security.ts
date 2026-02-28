@@ -1,6 +1,7 @@
 import { getPlan, type PlanType } from "@/lib/plans";
 
-const HARDBLOCK_COMMANDS = ["npm", "yarn", "pnpm", "pip", "sudo", "rm -rf /"];
+const HARDBLOCK_PATTERNS = [/\bnpm\b/, /\byarn\b/, /\bpnpm\b/, /^pip(\s|$)/, /\bsudo\b/, /rm\s+-rf\s+\//];
+const UNSAFE_INSTALL_FLAG_PATTERNS = [/(^|\s)--global(\s|$)/, /(^|\s)-g(\s|$)/, /(^|\s)--system(\s|$)/, /(^|\s)--break-system-packages(\s|$)/];
 
 export type CommandValidationResult =
   | { ok: true }
@@ -19,7 +20,9 @@ export function guardPathTraversal(path: string): CommandValidationResult {
 
 export function validateCommand(command: string, plan: PlanType): CommandValidationResult {
   const normalized = command.trim().toLowerCase();
-  if (HARDBLOCK_COMMANDS.some((blocked) => normalized.includes(blocked))) {
+  const currentPlan = getPlan(plan);
+
+  if (HARDBLOCK_PATTERNS.some((pattern) => pattern.test(normalized))) {
     return {
       ok: false,
       message: "Blocked command detected by security policy.",
@@ -27,7 +30,15 @@ export function validateCommand(command: string, plan: PlanType): CommandValidat
     };
   }
 
-  if (normalized.startsWith("bun add") && !getPlan(plan).canInstallJavaScript) {
+  if (UNSAFE_INSTALL_FLAG_PATTERNS.some((pattern) => pattern.test(normalized))) {
+    return {
+      ok: false,
+      message: "Unsafe package install flag blocked.",
+      suggestion: "Install packages only in the project scope without global/system flags.",
+    };
+  }
+
+  if (normalized.startsWith("bun add") && !currentPlan.canInstallJavaScript) {
     return {
       ok: false,
       message: "JavaScript package installation is only available on Pro.",
@@ -35,11 +46,27 @@ export function validateCommand(command: string, plan: PlanType): CommandValidat
     };
   }
 
-  if (normalized.startsWith("uv pip install") && !getPlan(plan).canInstallPython) {
+  if (normalized.startsWith("uv pip install") && !currentPlan.canInstallPython) {
     return {
       ok: false,
       message: "Python package installation is only available on Starter and Pro.",
       suggestion: "Upgrade to Starter or Pro to use uv pip install.",
+    };
+  }
+
+  if (normalized.startsWith("uv ") && !normalized.startsWith("uv pip install")) {
+    return {
+      ok: false,
+      message: "Only uv pip install is allowed for security reasons.",
+      suggestion: "Use uv pip install <package>.",
+    };
+  }
+
+  if (normalized.startsWith("bun ") && !normalized.startsWith("bun add")) {
+    return {
+      ok: false,
+      message: "Only bun add is allowed for security reasons.",
+      suggestion: "Use bun add <package>.",
     };
   }
 
