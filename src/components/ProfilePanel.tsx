@@ -35,6 +35,9 @@ export function ProfilePanel({
           >
             <p className="text-sm font-semibold">{plan.label}</p>
             <p className="text-xs text-slate-400">${plan.monthlyPriceUsd}/ay · AI: {plan.dailyAiLimit === "unlimited" ? "Sınırsız" : `${plan.dailyAiLimit}/gün`}</p>
+            <p className="text-xs text-slate-400">Depolama: {plan.storageLimitMb === "unlimited" ? "Sınırsız" : `${plan.storageLimitMb}MB`} · Deploy: {plan.deployLimit === "unlimited" ? "Sınırsız" : plan.deployLimit}</p>
+            <p className="text-xs text-slate-400">Paket: {plan.packageManagerSupport === "none" ? "Yok" : plan.packageManagerSupport === "uv" ? "uv" : "uv + bun"}</p>
+            <p className="text-[11px] text-slate-500">Güvenlik: {plan.securityTier}</p>
           </button>
         ))}
       </div>
