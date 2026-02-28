@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { AIPanel } from "@/components/AIPanel";
-import { Editor, type EditorFontStyle, type EditorPreferences, type EditorTheme } from "@/components/Editor";
+import { Editor, langFromPath, type EditorFontStyle, type EditorPreferences, type EditorTheme } from "@/components/Editor";
 import { FileExplorer } from "@/components/fileExplorer";
 import { ProfilePanel } from "@/components/ProfilePanel";
 import { DeployPanel } from "@/components/DeployPanel";
@@ -19,6 +19,8 @@ export default function HomePage() {
   const [files, setFiles] = useState<string[]>([]);
   const [currentFile, setCurrentFile] = useState("README.md");
   const [content, setContent] = useState("");
+  const [isDirty, setIsDirty] = useState(false);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [menu, setMenu] = useState<"file" | "view" | "run" | "deploy" | null>(null);
   const [showFileTree, setShowFileTree] = useState(true);
   const [showAIPanel, setShowAIPanel] = useState(true);
@@ -43,18 +45,28 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!user) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    setIsDirty(false);
     void fetch(`/api/files?type=file&path=${encodeURIComponent(currentFile)}`)
       .then((r) => r.json())
       .then((data) => setContent(data.content ?? ""));
   }, [currentFile, user]);
 
-  async function saveFile() {
+  const saveFile = useCallback(async (contentToSave = content) => {
     await fetch("/api/files", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "save", path: currentFile, content }),
+      body: JSON.stringify({ action: "save", path: currentFile, content: contentToSave }),
     });
-  }
+    setIsDirty(false);
+  }, [currentFile, content]);
+
+  const handleContentChange = useCallback((next: string) => {
+    setContent(next);
+    setIsDirty(true);
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => void saveFile(next), 1500);
+  }, [saveFile]);
 
   async function createFile(path: string) {
     await fetch("/api/files", {
@@ -224,6 +236,7 @@ export default function HomePage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
           </svg>
           <span className="max-w-[120px] truncate text-xs text-slate-400">{currentFile}</span>
+          {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-400" title="Kaydedilmemiş değişiklikler" />}
         </div>
 
         {/* Save button */}
@@ -256,7 +269,15 @@ export default function HomePage() {
           )}
 
           <div className="min-h-0">
-            <Editor value={content} onChange={setContent} preferences={editorPreferences} height="20rem" />
+            <Editor
+              value={content}
+              onChange={handleContentChange}
+              onSave={() => void saveFile()}
+              language={langFromPath(currentFile)}
+              isDirty={isDirty}
+              preferences={editorPreferences}
+              height="20rem"
+            />
           </div>
 
           <div className="space-y-2">
