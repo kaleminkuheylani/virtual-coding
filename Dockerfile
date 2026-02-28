@@ -8,7 +8,7 @@ ENV PATH="/root/.local/bin:${PATH}"
 RUN mkdir -p /opt/node-modules /opt/python-venv /workspace /cache
 WORKDIR /opt/node-modules
 RUN bun add react vue svelte next typescript vite axios lodash-es date-fns zod tailwindcss
-RUN uv venv /opt/python-venv && /opt/python-venv/bin/uv pip install fastapi uvicorn flask django pandas numpy requests pydantic openai anthropic
+RUN uv venv /opt/python-venv && uv pip install --python /opt/python-venv/bin/python fastapi uvicorn flask django pandas numpy requests pydantic openai anthropic
 
 WORKDIR /app
 COPY . .
