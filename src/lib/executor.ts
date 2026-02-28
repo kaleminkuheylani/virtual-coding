@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import type { PlanType } from "@/lib/plans";
 import { validateCommand } from "@/lib/security";
+import { resolveCommandShell } from "@/lib/shell";
 
 export async function executeCommand(command: string, plan: PlanType, cwd: string): Promise<{ stdout: string; stderr: string; code: number | null }> {
   const guard = validateCommand(command, plan);
@@ -13,7 +14,8 @@ export async function executeCommand(command: string, plan: PlanType, cwd: strin
   }
 
   return new Promise((resolve) => {
-    const child = spawn("bash", ["-lc", command], { cwd, env: process.env });
+    const shell = resolveCommandShell(command);
+    const child = spawn(shell.command, shell.args, { cwd, env: process.env });
     let stdout = "";
     let stderr = "";
 
