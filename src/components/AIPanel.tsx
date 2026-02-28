@@ -18,15 +18,19 @@ export function AIPanel({ plan }: { plan: PlanType }) {
   }
 
   return (
-    <section className="rounded-xl border p-3">
+    <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl shadow-slate-950/40">
       <h3 className="font-semibold">AI Assistant</h3>
-      <textarea className="mt-2 w-full rounded border p-2 text-sm" value={prompt} onChange={(e) => setPrompt(e.target.value)} />
-      <div className="mt-2 flex gap-2">
-        <button className="rounded bg-violet-600 px-3 py-1 text-white" onClick={runPrompt}>Send</button>
-        <button className="rounded border px-2 py-1" onClick={() => setPrompt("Debug this code")}>Debug</button>
-        <button className="rounded border px-2 py-1" onClick={() => setPrompt("Refactor this code")}>Refactor</button>
+      <textarea
+        className="mt-3 min-h-24 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-2 text-sm outline-none transition focus:border-violet-400"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+      />
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button className="rounded-lg bg-violet-600 px-3 py-1 text-sm font-medium text-white transition hover:bg-violet-500" onClick={runPrompt}>Send</button>
+        <button className="rounded-lg border border-slate-700 px-2 py-1 text-sm hover:border-slate-500" onClick={() => setPrompt("Debug this code")}>Debug</button>
+        <button className="rounded-lg border border-slate-700 px-2 py-1 text-sm hover:border-slate-500" onClick={() => setPrompt("Refactor this code")}>Refactor</button>
       </div>
-      <pre className="mt-2 h-40 overflow-auto rounded bg-gray-50 p-2 text-xs">{response || "No AI output yet."}</pre>
+      <pre className="mt-3 h-44 overflow-auto rounded-xl border border-slate-800 bg-slate-950/80 p-3 text-xs text-slate-300">{response || "No AI output yet."}</pre>
     </section>
   );
 }
