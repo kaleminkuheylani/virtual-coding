@@ -1,6 +1,6 @@
 import { getPlan, type PlanType } from "@/lib/plans";
 
-const HARDBLOCK_COMMANDS = ["npm", "yarn", "pnpm", "pip", "sudo", "rm -rf /"];
+const HARDBLOCK_COMMANDS = ["npm", "yarn", "pnpm", "sudo", "rm -rf /"];
 
 export type CommandValidationResult =
   | { ok: true }
@@ -19,11 +19,12 @@ export function guardPathTraversal(path: string): CommandValidationResult {
 
 export function validateCommand(command: string, plan: PlanType): CommandValidationResult {
   const normalized = command.trim().toLowerCase();
-  if (HARDBLOCK_COMMANDS.some((blocked) => normalized.includes(blocked))) {
+
+  if (normalized.startsWith("uv pip install") && !getPlan(plan).canInstallPython) {
     return {
       ok: false,
-      message: "Blocked command detected by security policy.",
-      suggestion: "Use bun add (Pro) or uv pip install (Starter+).",
+      message: "Python package installation is only available on Starter and Pro.",
+      suggestion: "Upgrade to Starter or Pro to use uv pip install.",
     };
   }
 
@@ -35,11 +36,19 @@ export function validateCommand(command: string, plan: PlanType): CommandValidat
     };
   }
 
-  if (normalized.startsWith("uv pip install") && !getPlan(plan).canInstallPython) {
+  if (/\bpip(?:\d+)?\b/.test(normalized) && !normalized.includes("uv pip")) {
     return {
       ok: false,
-      message: "Python package installation is only available on Starter and Pro.",
-      suggestion: "Upgrade to Starter or Pro to use uv pip install.",
+      message: "Blocked command detected by security policy.",
+      suggestion: "Use uv pip install (Starter+) for Python packages.",
+    };
+  }
+
+  if (HARDBLOCK_COMMANDS.some((blocked) => normalized.includes(blocked))) {
+    return {
+      ok: false,
+      message: "Blocked command detected by security policy.",
+      suggestion: "Use bun add (Pro) or uv pip install (Starter+).",
     };
   }
 

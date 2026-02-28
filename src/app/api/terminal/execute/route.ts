@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeCommand } from "@/lib/executor";
-import type { PlanType } from "@/lib/plans";
+import { getUserContext } from "@/lib/user-context";
 import { ensureWorkspace, userWorkspace } from "@/lib/workspace";
-
-const USER_ID = "demo-user";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const command = String(body.command ?? "");
-  const plan = (body.plan ?? "free") as PlanType;
+  const user = getUserContext(request);
 
-  await ensureWorkspace(USER_ID);
-  const result = await executeCommand(command, plan, userWorkspace(USER_ID));
+  await ensureWorkspace(user.id);
+  const result = await executeCommand(command, user.plan, userWorkspace(user.id));
   return NextResponse.json(result);
 }
