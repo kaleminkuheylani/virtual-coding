@@ -14,8 +14,14 @@ export async function GET(request: NextRequest) {
   const type = request.nextUrl.searchParams.get("type") ?? "list";
 
   if (type === "file") {
-    const content = await readWorkspaceFile(USER_ID, path);
-    return NextResponse.json({ path, content });
+    try {
+      const content = await readWorkspaceFile(USER_ID, path);
+      return NextResponse.json({ path, content });
+    } catch {
+      const content = "# Yeni dosya\n";
+      await saveWorkspaceFile(USER_ID, path, content);
+      return NextResponse.json({ path, content });
+    }
   }
 
   const entries = await listDirectory(USER_ID, path);

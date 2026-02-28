@@ -3,15 +3,18 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "bun run --hot server.ts",
+    "build": "next build",
+    "start": "NODE_ENV=production bun run server.ts",
     "lint": "echo 'lint placeholder'",
-    "typecheck": "tsc --noEmit",
-    "dev:ws": "bun run --hot backend/server.ts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@supabase/supabase-js": "^2.49.1",
     "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "http-proxy": "^1.18.1",
     "monaco-editor": "^0.52.2",
     "next": "15.0.0",
     "node-pty": "^1.0.0",
@@ -19,14 +22,15 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "ws": "^8.18.0",
-    "zod": "^3.24.2",
-    "@xterm/xterm": "^5.5.0",
-    "http-proxy": "^1.18.1"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
+    "@types/react": "^18.3.12",
     "@types/ws": "^8.5.14",
-    "typescript": "^5.8.2",
-    "@types/react": "^18.3.12"
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.6",
+    "tailwindcss": "3.4.17",
+    "typescript": "^5.8.2"
   }
 }

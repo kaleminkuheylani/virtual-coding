@@ -6,7 +6,12 @@ import { ensureWorkspace, userWorkspace } from "@/lib/workspace";
 const USER_ID = "demo-user";
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  let body: Record<string, unknown> = {};
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ stdout: "", stderr: "Invalid JSON payload.", code: 1 }, { status: 400 });
+  }
   const command = String(body.command ?? "");
   const plan = (body.plan ?? "free") as PlanType;
 

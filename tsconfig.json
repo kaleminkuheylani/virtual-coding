@@ -32,6 +32,7 @@
     ]
   },
   "include": [
+    "server.ts",
     "backend/server.ts",
     "src",
     ".next/types/**/*.ts"

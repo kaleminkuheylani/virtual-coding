@@ -22,6 +22,12 @@ export function PricingModal({
             <p className="font-medium">{plan.label}</p>
             <p>${plan.monthlyPriceUsd}/month</p>
             <p>AI: {plan.dailyAiLimit === "unlimited" ? "Unlimited" : `${plan.dailyAiLimit}/day`}</p>
+            <p>Storage: {plan.storageLimitMb === "unlimited" ? "Unlimited" : `${plan.storageLimitMb}MB`}</p>
+            <p>Deploy: {plan.deployLimit === "unlimited" ? "Unlimited" : `${plan.deployLimit} deploy`}</p>
+            <p>
+              Paket Yöneticisi: {plan.packageManagerSupport === "preinstalled" ? "Preinstalled paketler" : plan.packageManagerSupport === "uv" ? "uv" : "uv + bun"}
+            </p>
+            <p className="text-xs text-slate-500">Güvenlik: {plan.securityTier}</p>
           </button>
         ))}
       </div>
