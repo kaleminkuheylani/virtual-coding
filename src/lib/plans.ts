@@ -7,7 +7,7 @@ export type PlanConfig = {
   dailyAiLimit: number | "unlimited";
   storageLimitMb: number | "unlimited";
   deployLimit: number | "unlimited";
-  packageManagerSupport: "none" | "uv" | "uv+bun";
+  packageManagerSupport: "preinstalled" | "uv" | "uv+bun";
   securityTier: string;
   canInstallPython: boolean;
   canInstallJavaScript: boolean;
@@ -21,8 +21,8 @@ export const PLANS: Record<PlanType, PlanConfig> = {
     dailyAiLimit: 10,
     storageLimitMb: 100,
     deployLimit: 1,
-    packageManagerSupport: "none",
-    securityTier: "Temel komut filtreleme ve path-traversal koruması",
+    packageManagerSupport: "preinstalled",
+    securityTier: "Temel komut filtreleme, npm/pip kısıtı ve path-traversal koruması",
     canInstallPython: false,
     canInstallJavaScript: false,
   },
@@ -32,9 +32,9 @@ export const PLANS: Record<PlanType, PlanConfig> = {
     monthlyPriceUsd: 10,
     dailyAiLimit: 50,
     storageLimitMb: 300,
-    deployLimit: "unlimited",
+    deployLimit: 1,
     packageManagerSupport: "uv",
-    securityTier: "Gelişmiş komut doğrulama + uv izin listesi",
+    securityTier: "Gelişmiş komut doğrulama + npm/pip kısıtı + uv izin listesi",
     canInstallPython: true,
     canInstallJavaScript: false,
   },
@@ -46,7 +46,7 @@ export const PLANS: Record<PlanType, PlanConfig> = {
     storageLimitMb: "unlimited",
     deployLimit: "unlimited",
     packageManagerSupport: "uv+bun",
-    securityTier: "Pro koruma: uv + bun güvenli bayrak/komut denetimleri",
+    securityTier: "Pro koruma: npm/pip kısıtı + uv/bun güvenli bayrak denetimleri",
     canInstallPython: true,
     canInstallJavaScript: true,
   },
