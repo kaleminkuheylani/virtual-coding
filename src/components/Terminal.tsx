@@ -20,8 +20,8 @@ export function Terminal({ onRun }: { onRun: (command: string) => Promise<string
       convertEol: true,
       fontSize: 12,
       theme: {
-        background: "#000000",
-        foreground: "#9FEF00",
+        background: "#020617",
+        foreground: "#e2e8f0",
       },
       cursorBlink: true,
     });
@@ -59,9 +59,9 @@ export function Terminal({ onRun }: { onRun: (command: string) => Promise<string
   }
 
   return (
-    <section className="rounded-xl border p-3">
+    <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-3 shadow-lg shadow-slate-950/30">
       <h3 className="font-semibold">Terminal</h3>
-      <div ref={terminalContainerRef} className="mt-2 h-44 overflow-hidden rounded bg-black p-2" />
+      <div ref={terminalContainerRef} className="mt-2 h-44 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-2" />
       <div className="mt-2 flex gap-2">
         <input
           value={command}
@@ -71,9 +71,9 @@ export function Terminal({ onRun }: { onRun: (command: string) => Promise<string
               void handleRun();
             }
           }}
-          className="flex-1 rounded border px-2 py-1"
+          className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm outline-none transition focus:border-violet-400"
         />
-        <button onClick={() => void handleRun()} className="rounded bg-blue-600 px-3 py-1 text-white">Run</button>
+        <button onClick={() => void handleRun()} className="rounded-lg bg-violet-600 px-3 py-1 text-sm font-medium text-white hover:bg-violet-500">Run</button>
       </div>
     </section>
   );
