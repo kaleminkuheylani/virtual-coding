@@ -1,6 +1,6 @@
 import { getPlan, type PlanType } from "@/lib/plans";
 
-const HARDBLOCK_PATTERNS = [/\bnpm\b/, /\byarn\b/, /\bpnpm\b/, /^pip(\s|$)/, /\bsudo\b/, /rm\s+-rf\s+\//];
+const HARDBLOCK_PATTERNS = [/\bnpm\b/, /\bnpx\b/, /\byarn\b/, /\bpnpm\b/, /^pip(\s|$)/, /\bpython\s+-m\s+pip\b/, /\bpip3\b/, /\bsudo\b/, /rm\s+-rf\s+\//];
 const UNSAFE_INSTALL_FLAG_PATTERNS = [/(^|\s)--global(\s|$)/, /(^|\s)-g(\s|$)/, /(^|\s)--system(\s|$)/, /(^|\s)--break-system-packages(\s|$)/];
 
 export type CommandValidationResult =

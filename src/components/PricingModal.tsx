@@ -25,7 +25,7 @@ export function PricingModal({
             <p>Storage: {plan.storageLimitMb === "unlimited" ? "Unlimited" : `${plan.storageLimitMb}MB`}</p>
             <p>Deploy: {plan.deployLimit === "unlimited" ? "Unlimited" : `${plan.deployLimit} deploy`}</p>
             <p>
-              Paket Yöneticisi: {plan.packageManagerSupport === "none" ? "Yok" : plan.packageManagerSupport === "uv" ? "uv" : "uv + bun"}
+              Paket Yöneticisi: {plan.packageManagerSupport === "preinstalled" ? "Preinstalled paketler" : plan.packageManagerSupport === "uv" ? "uv" : "uv + bun"}
             </p>
             <p className="text-xs text-slate-500">Güvenlik: {plan.securityTier}</p>
           </button>
