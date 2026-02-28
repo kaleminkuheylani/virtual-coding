@@ -12,7 +12,9 @@ RUN uv venv /opt/python-venv && /opt/python-venv/bin/uv pip install fastapi uvic
 
 WORKDIR /app
 COPY . .
+RUN bun install
+RUN bun run build
 
 ENV WORKSPACE_ROOT=/workspace
-EXPOSE 3000 3001
-CMD ["bun", "run", "dev"]
+EXPOSE 3000
+CMD ["bun", "run", "start"]

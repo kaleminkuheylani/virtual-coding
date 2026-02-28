@@ -3,14 +3,11 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev",
-    "dev:web": "next dev",
-    "dev:backend": "bun run --hot backend/server.ts",
-    "dev:all": "bunx concurrently -n web,backend -c cyan,magenta \"bun run dev:web\" \"bun run dev:backend\"",
-    "backend:start": "bun run backend/server.ts",
+    "dev": "bun run --hot server.ts",
+    "build": "next build",
+    "start": "NODE_ENV=production bun run server.ts",
     "lint": "echo 'lint placeholder'",
-    "typecheck": "tsc --noEmit",
-    "dev:ws": "bun run --hot backend/server.ts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

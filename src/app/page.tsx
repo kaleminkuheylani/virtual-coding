@@ -61,20 +61,6 @@ export default function HomePage() {
     await loadFiles();
   }
 
-  async function runCommand(command: string): Promise<string> {
-    const response = await fetch("/api/terminal/execute", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ command, plan }),
-    });
-    const data = await response.json();
-    return `${data.stdout ?? ""}${data.stderr ?? ""}`;
-  }
-
-  async function runQuickCommand(command: string) {
-    await runCommand(command);
-    setShowTerminal(true);
-  }
 
   function updateTheme(theme: EditorTheme) {
     setEditorPreferences((current) => ({ ...current, theme }));
@@ -166,8 +152,9 @@ export default function HomePage() {
 
               {menu === "run" && (
                 <div className="space-y-1">
-                  <button className="w-full rounded-md px-2 py-1.5 text-left hover:bg-slate-800" onClick={() => void runQuickCommand("bun run typecheck")}>Typecheck Çalıştır</button>
-                  <button className="w-full rounded-md px-2 py-1.5 text-left hover:bg-slate-800" onClick={() => void runQuickCommand("bun run lint")}>Lint Çalıştır</button>
+                  <p className="px-2 py-1 text-xs text-slate-400">Terminale yazın:</p>
+                  <p className="px-2 font-mono text-xs text-slate-300">bun run typecheck</p>
+                  <p className="px-2 font-mono text-xs text-slate-300">bun run lint</p>
                 </div>
               )}
 
@@ -195,7 +182,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {showTerminal && <Terminal onRun={runCommand} expanded={terminalExpanded} onToggleExpanded={() => setTerminalExpanded((value) => !value)} />}
+        {showTerminal && <Terminal expanded={terminalExpanded} onToggleExpanded={() => setTerminalExpanded((value) => !value)} />}
       </div>
     </main>
   );
