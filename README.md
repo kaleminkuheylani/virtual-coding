@@ -1,18 +1,15 @@
-# Virtual Coding
+# Virtual Coding IDE
 
-This repository is prepared for virtual coding tasks.
+Next.js 15 + React 19 tabanlı web IDE iskeleti.
 
-## Purpose
+## Özellikler
+- Plan bazlı paket/AI limit yönetimi
+- API route'lar: files, terminal execute, AI, health
+- WebSocket terminal sunucusu (`server.ts`)
+- Railway + Supabase başlangıç konfigürasyonu
 
-- Keep coding exercises and examples in a single place.
-- Provide a simple starting point for future development.
-
-## Getting Started
-
-1. Clone the repository.
-2. Add your project files.
-3. Commit and push your changes.
-
-## Language Note
-
-This README is written in English as requested.
+## Çalıştırma
+```bash
+bun install
+bun run dev
+```
