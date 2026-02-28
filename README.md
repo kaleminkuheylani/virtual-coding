@@ -35,6 +35,17 @@ bun run dev:backend
 - `bun run dev:all` → UI + backend aynı anda
 - `bun run backend:start` → backend production benzeri tek seferlik başlatma
 
+## Python internet paketleri (10 adet)
+Projeye internet/network odaklı Python paket listesi eklendi: `requirements.internet.txt`.
+
+Kurulum (önerilen):
+```bash
+uv venv .venv
+uv pip install --python .venv/bin/python -r requirements.internet.txt
+```
+
+Bu dosyada 10 ana paket bulunur: `requests`, `httpx`, `aiohttp`, `websockets`, `dnspython`, `python-whois`, `feedparser`, `beautifulsoup4`, `trafilatura`, `scrapy`.
+
 ## Ortam değişkenleri
 - `WS_PORT`: WebSocket backend portu (default: `3001`)
 - `WORKSPACE_ROOT`: Terminal oturumlarının açılacağı kök klasör (default: `/workspace/demo-user`)

@@ -18,6 +18,13 @@ export function Terminal({
   const terminalContainerRef = useRef<HTMLDivElement | null>(null);
   const terminalRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const onRunRef = useRef(onRun);
+  const commandRef = useRef("");
+  const runningRef = useRef(false);
+
+  useEffect(() => {
+    onRunRef.current = onRun;
+  }, [onRun]);
 
   useEffect(() => {
     if (!terminalContainerRef.current) {
@@ -26,7 +33,12 @@ export function Terminal({
 
     const terminal = new XTerm({
       convertEol: true,
-      fontSize: 12,
+      fontSize: 13,
+      fontFamily: "JetBrains Mono, Fira Code, Menlo, Monaco, monospace",
+      lineHeight: 1.3,
+      scrollback: 2000,
+      cursorStyle: "block",
+      rightClickSelectsWord: true,
       theme: {
         background: "#020617",
         foreground: "#e2e8f0",
@@ -39,15 +51,67 @@ export function Terminal({
     terminal.open(terminalContainerRef.current);
     fitAddon.fit();
     terminal.writeln("Ready...");
+    terminal.write("$ ");
+
+    const runCommand = async () => {
+      const nextCommand = commandRef.current.trim();
+      if (!nextCommand || runningRef.current) {
+        terminal.write("\r\n$ ");
+        commandRef.current = "";
+        setCommand("");
+        return;
+      }
+
+      runningRef.current = true;
+      terminal.write("\r\n");
+      const result = await onRunRef.current(nextCommand);
+      terminal.writeln(result || "(no output)");
+      commandRef.current = "";
+      setCommand("");
+      terminal.write("$ ");
+      runningRef.current = false;
+      fitAddon.fit();
+    };
+
+    terminal.onData((data) => {
+      if (runningRef.current) {
+        return;
+      }
+
+      if (data === "\r") {
+        void runCommand();
+        return;
+      }
+
+      if (data === "\u007f") {
+        if (commandRef.current.length > 0) {
+          commandRef.current = commandRef.current.slice(0, -1);
+          setCommand(commandRef.current);
+          terminal.write("\b \b");
+        }
+        return;
+      }
+
+      if (/^[\x20-\x7E]$/.test(data)) {
+        commandRef.current += data;
+        setCommand(commandRef.current);
+        terminal.write(data);
+      }
+    });
+
+    terminal.focus();
 
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
     const onResize = () => fitAddon.fit();
+    const resizeObserver = new ResizeObserver(() => fitAddon.fit());
+    resizeObserver.observe(terminalContainerRef.current);
     window.addEventListener("resize", onResize);
 
     return () => {
       window.removeEventListener("resize", onResize);
+      resizeObserver.disconnect();
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
@@ -60,14 +124,19 @@ export function Terminal({
   }, [expanded]);
 
   async function handleRun() {
-    if (!command.trim()) {
+    const currentCommand = command.trim();
+    if (!currentCommand || runningRef.current) {
       return;
     }
 
-    terminalRef.current?.writeln(`$ ${command}`);
-    const result = await onRun(command);
+    runningRef.current = true;
+    terminalRef.current?.writeln(`$ ${currentCommand}`);
+    const result = await onRun(currentCommand);
     terminalRef.current?.writeln(result || "(no output)");
+    terminalRef.current?.write("$ ");
     setCommand("");
+    commandRef.current = "";
+    runningRef.current = false;
     fitAddonRef.current?.fit();
   }
 
@@ -84,12 +153,16 @@ export function Terminal({
       </div>
       <div
         ref={terminalContainerRef}
-        className={`mt-2 w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950 p-2 ${expanded ? "h-56" : "h-32"}`}
+        onClick={() => terminalRef.current?.focus()}
+        className={`terminal-shell mt-2 w-full rounded-lg border border-slate-800 bg-slate-950 ${expanded ? "h-64" : "h-40"}`}
       />
       <div className="mt-2 flex gap-2">
         <input
           value={command}
-          onChange={(e) => setCommand(e.target.value)}
+          onChange={(e) => {
+            setCommand(e.target.value);
+            commandRef.current = e.target.value;
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               void handleRun();
