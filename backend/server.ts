@@ -2,7 +2,7 @@ import http from "node:http";
 import { randomUUID } from "node:crypto";
 import { WebSocketServer } from "ws";
 import pty from "node-pty";
-import { validateCommand } from "./src/lib/security";
+import { validateCommand } from "../src/lib/security";
 
 const PORT = Number(process.env.WS_PORT ?? 3001);
 
