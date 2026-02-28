@@ -7,11 +7,14 @@ import { Editor, type EditorFontStyle, type EditorPreferences, type EditorTheme 
 import { FileExplorer } from "@/components/fileExplorer";
 import { ProfilePanel } from "@/components/ProfilePanel";
 import { DeployPanel } from "@/components/DeployPanel";
+import { LoginScreen } from "@/components/LoginScreen";
 import { usePlan } from "@/hooks/usePlan";
+import { useAuth } from "@/hooks/useAuth";
 
 const Terminal = dynamic(() => import("@/components/Terminal").then((mod) => mod.Terminal), { ssr: false });
 
 export default function HomePage() {
+  const { user, loading, signIn, signUp, signOut, continueAsDemo } = useAuth();
   const { plan, setPlan } = usePlan("free");
   const [files, setFiles] = useState<string[]>([]);
   const [currentFile, setCurrentFile] = useState("README.md");
@@ -35,14 +38,15 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    void loadFiles();
-  }, []);
+    if (user) void loadFiles();
+  }, [user]);
 
   useEffect(() => {
+    if (!user) return;
     void fetch(`/api/files?type=file&path=${encodeURIComponent(currentFile)}`)
       .then((r) => r.json())
       .then((data) => setContent(data.content ?? ""));
-  }, [currentFile]);
+  }, [currentFile, user]);
 
   async function saveFile() {
     await fetch("/api/files", {
@@ -60,7 +64,6 @@ export default function HomePage() {
     });
     await loadFiles();
   }
-
 
   function updateTheme(theme: EditorTheme) {
     setEditorPreferences((current) => ({ ...current, theme }));
@@ -85,76 +88,121 @@ export default function HomePage() {
     return "grid gap-2 lg:grid-cols-[minmax(0,1fr)_340px]";
   }, [showFileTree]);
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#020617]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-violet-500" />
+          <p className="text-sm text-slate-500">Yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Auth gate
+  if (!user) {
+    return <LoginScreen onSignIn={signIn} onSignUp={signUp} onDemo={continueAsDemo} />;
+  }
+
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-[#020617] px-2 pb-2 pt-2 text-slate-100" onClick={() => setMenu(null)}>
-      <header className="mb-2 flex rounded-xl border border-slate-800 bg-slate-900/70 p-3 shadow-lg shadow-slate-950/30">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Virtual Coding IDE</h1>
-            <p className="text-xs text-slate-400">Dark mode geliştirme alanı</p>
+    <main
+      className="flex h-screen flex-col overflow-hidden bg-[#020617] text-slate-100"
+      onClick={() => setMenu(null)}
+    >
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <header className="flex shrink-0 items-center gap-2 border-b border-slate-800/80 bg-slate-900/80 px-3 py-2 shadow-sm shadow-slate-950/40 backdrop-blur-sm">
+        {/* Logo */}
+        <div className="flex items-center gap-2 pr-3">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-600/20 ring-1 ring-violet-500/20">
+            <svg className="h-4 w-4 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
+            </svg>
           </div>
+          <span className="text-sm font-semibold tracking-tight text-slate-200">Virtual IDE</span>
         </div>
 
-        <div className="relative ml-3 mt-1 flex gap-2 text-sm" onClick={(e) => e.stopPropagation()}>
-          <button className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 hover:border-slate-500" onClick={() => setMenu(menu === "file" ? null : "file")}>File</button>
-          <button className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 hover:border-slate-500" onClick={() => setMenu(menu === "view" ? null : "view")}>View</button>
-          <button className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 hover:border-slate-500" onClick={() => setMenu(menu === "run" ? null : "run")}>Run</button>
-          <button className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 hover:border-slate-500" onClick={() => setMenu(menu === "deploy" ? null : "deploy")}>Deploy</button>
+        {/* Menu bar */}
+        <div className="relative flex items-center gap-0.5 text-sm" onClick={(e) => e.stopPropagation()}>
+          {(["File", "View", "Run", "Deploy"] as const).map((item) => {
+            const key = item.toLowerCase() as typeof menu;
+            return (
+              <button
+                key={item}
+                onClick={() => setMenu(menu === key ? null : key)}
+                className={`rounded-md px-2.5 py-1 text-xs transition ${
+                  menu === key
+                    ? "bg-slate-700 text-slate-100"
+                    : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                }`}
+              >
+                {item}
+              </button>
+            );
+          })}
 
           {menu && (
-            <div className={`absolute top-11 z-10 rounded-xl border border-slate-700 bg-slate-900 p-2 shadow-2xl shadow-slate-950/60 ${menu === "deploy" ? "w-[380px]" : "w-72"}`}>
+            <div
+              className={`absolute left-0 top-8 z-50 rounded-xl border border-slate-700/80 bg-slate-900/95 p-1.5 shadow-2xl shadow-slate-950/70 backdrop-blur-sm ${
+                menu === "deploy" ? "w-[380px]" : "w-56"
+              }`}
+            >
               {menu === "file" && (
-                <div className="space-y-1">
-                  <button className="w-full rounded-md px-2 py-1.5 text-left hover:bg-slate-800" onClick={() => void saveFile()}>Kaydet</button>
-                  <button className="w-full rounded-md px-2 py-1.5 text-left hover:bg-slate-800" onClick={() => void loadFiles()}>Dosyaları Yenile</button>
+                <div className="space-y-0.5">
+                  <MenuButton onClick={() => void saveFile()}>Kaydet <Kbd>⌘S</Kbd></MenuButton>
+                  <MenuButton onClick={() => void loadFiles()}>Dosyaları Yenile</MenuButton>
                 </div>
               )}
 
               {menu === "view" && (
-                <div className="space-y-1">
-                  <div className="rounded-md border border-slate-700 bg-slate-950/70 p-2">
-                    <p className="mb-1 text-[11px] uppercase tracking-wide text-slate-400">Editor Theme</p>
+                <div className="space-y-2 p-1">
+                  {/* Theme */}
+                  <div>
+                    <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Tema</p>
                     <div className="grid grid-cols-2 gap-1">
-                      <button className={`rounded px-2 py-1 text-xs ${editorPreferences.theme === "vs-dark" ? "bg-violet-600 text-white" : "bg-slate-800 hover:bg-slate-700"}`} onClick={() => updateTheme("vs-dark")}>Dark</button>
-                      <button className={`rounded px-2 py-1 text-xs ${editorPreferences.theme === "hc-black" ? "bg-violet-600 text-white" : "bg-slate-800 hover:bg-slate-700"}`} onClick={() => updateTheme("hc-black")}>High Contrast</button>
+                      <ToggleButton active={editorPreferences.theme === "vs-dark"} onClick={() => updateTheme("vs-dark")}>Dark</ToggleButton>
+                      <ToggleButton active={editorPreferences.theme === "hc-black"} onClick={() => updateTheme("hc-black")}>High Contrast</ToggleButton>
                     </div>
                   </div>
-
-                  <div className="rounded-md border border-slate-700 bg-slate-950/70 p-2">
-                    <p className="mb-1 text-[11px] uppercase tracking-wide text-slate-400">Font</p>
-                    <select value={editorPreferences.fontFamily} onChange={(event) => updateFontFamily(event.target.value)} className="mb-1 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs">
+                  {/* Font */}
+                  <div>
+                    <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Font</p>
+                    <select
+                      value={editorPreferences.fontFamily}
+                      onChange={(e) => updateFontFamily(e.target.value)}
+                      className="mb-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs text-slate-200"
+                    >
                       <option value="JetBrains Mono, Fira Code, Menlo, Monaco, monospace">JetBrains Mono</option>
                       <option value="Fira Code, Menlo, Monaco, monospace">Fira Code</option>
                       <option value="Consolas, Menlo, Monaco, monospace">Consolas</option>
                     </select>
-                    <div className="mb-1 grid grid-cols-2 gap-1">
-                      <button className={`rounded px-2 py-1 text-xs ${editorPreferences.fontStyle === "normal" ? "bg-violet-600 text-white" : "bg-slate-800 hover:bg-slate-700"}`} onClick={() => updateFontStyle("normal")}>Normal</button>
-                      <button className={`rounded px-2 py-1 text-xs ${editorPreferences.fontStyle === "italic" ? "bg-violet-600 text-white" : "bg-slate-800 hover:bg-slate-700"}`} onClick={() => updateFontStyle("italic")}>Italic</button>
+                    <div className="mb-1.5 grid grid-cols-2 gap-1">
+                      <ToggleButton active={editorPreferences.fontStyle === "normal"} onClick={() => updateFontStyle("normal")}>Normal</ToggleButton>
+                      <ToggleButton active={editorPreferences.fontStyle === "italic"} onClick={() => updateFontStyle("italic")}>Italic</ToggleButton>
                     </div>
-                    <label className="text-[11px] text-slate-400">Font Size: {editorPreferences.fontSize}px</label>
-                    <input type="range" min={11} max={20} value={editorPreferences.fontSize} onChange={(event) => updateFontSize(Number(event.target.value))} className="w-full accent-violet-500" />
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[11px] text-slate-400">Boyut</label>
+                      <span className="text-[11px] text-violet-400">{editorPreferences.fontSize}px</span>
+                    </div>
+                    <input type="range" min={11} max={20} value={editorPreferences.fontSize} onChange={(e) => updateFontSize(Number(e.target.value))} className="w-full accent-violet-500" />
                   </div>
-
-                  <button className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left hover:bg-slate-800" onClick={() => setShowFileTree((value) => !value)}>
-                    File Explorer <span>{showFileTree ? "Açık" : "Kapalı"}</span>
-                  </button>
-                  <button className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left hover:bg-slate-800" onClick={() => setShowAIPanel((value) => !value)}>
-                    AI Panel <span>{showAIPanel ? "Açık" : "Kapalı"}</span>
-                  </button>
-                  <button className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left hover:bg-slate-800" onClick={() => setShowTerminal((value) => !value)}>
-                    Terminal <span>{showTerminal ? "Açık" : "Kapalı"}</span>
-                  </button>
-                  <button className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left hover:bg-slate-800" onClick={() => setTerminalExpanded((value) => !value)}>
-                    Terminal Boyutu <span>{terminalExpanded ? "Geniş" : "Dar"}</span>
-                  </button>
+                  {/* Panels */}
+                  <div>
+                    <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Paneller</p>
+                    <ViewToggle label="Dosya Gezgini" active={showFileTree} onToggle={() => setShowFileTree((v) => !v)} />
+                    <ViewToggle label="AI Panel" active={showAIPanel} onToggle={() => setShowAIPanel((v) => !v)} />
+                    <ViewToggle label="Terminal" active={showTerminal} onToggle={() => setShowTerminal((v) => !v)} />
+                    <ViewToggle label="Geniş Terminal" active={terminalExpanded} onToggle={() => setTerminalExpanded((v) => !v)} />
+                  </div>
                 </div>
               )}
 
               {menu === "run" && (
-                <div className="space-y-1">
-                  <p className="px-2 py-1 text-xs text-slate-400">Terminale yazın:</p>
-                  <p className="px-2 font-mono text-xs text-slate-300">bun run typecheck</p>
-                  <p className="px-2 font-mono text-xs text-slate-300">bun run lint</p>
+                <div className="p-1">
+                  <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Hızlı Komutlar</p>
+                  <p className="px-2 text-xs text-slate-400">Terminale yazın:</p>
+                  <p className="mt-1 rounded-lg bg-slate-800 px-2 py-1 font-mono text-xs text-violet-300">bun run typecheck</p>
+                  <p className="mt-1 rounded-lg bg-slate-800 px-2 py-1 font-mono text-xs text-violet-300">bun run lint</p>
                 </div>
               )}
 
@@ -166,24 +214,127 @@ export default function HomePage() {
             </div>
           )}
         </div>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Current file pill */}
+        <div className="hidden items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/50 px-2.5 py-1 sm:flex">
+          <svg className="h-3 w-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <span className="max-w-[120px] truncate text-xs text-slate-400">{currentFile}</span>
+        </div>
+
+        {/* Save button */}
+        <button
+          onClick={() => void saveFile()}
+          className="hidden items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300 transition hover:border-slate-500 hover:text-slate-100 sm:flex"
+        >
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          Kaydet
+        </button>
+
+        {/* User avatar */}
+        <div className="ml-1 flex h-7 w-7 items-center justify-center rounded-lg bg-violet-600/20 text-xs font-semibold text-violet-300 ring-1 ring-violet-500/20">
+          {user.email.charAt(0).toUpperCase()}
+        </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2">
+      {/* ── Main content ────────────────────────────────────────── */}
+      <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden p-1.5">
         <div className={`${gridClassName} min-h-0`}>
-          {showFileTree && <FileExplorer files={files} currentFile={currentFile} onOpen={setCurrentFile} onCreateFile={createFile} />}
+          {showFileTree && (
+            <FileExplorer
+              files={files}
+              currentFile={currentFile}
+              onOpen={setCurrentFile}
+              onCreateFile={createFile}
+            />
+          )}
 
           <div className="min-h-0">
             <Editor value={content} onChange={setContent} preferences={editorPreferences} height="20rem" />
           </div>
 
           <div className="space-y-2">
-            <ProfilePanel current={plan} onSelect={setPlan} />
+            <ProfilePanel current={plan} onSelect={setPlan} user={user} onSignOut={() => void signOut()} />
             {showAIPanel && <AIPanel plan={plan} />}
           </div>
         </div>
 
-        {showTerminal && <Terminal expanded={terminalExpanded} onToggleExpanded={() => setTerminalExpanded((value) => !value)} />}
+        {showTerminal && (
+          <Terminal
+            expanded={terminalExpanded}
+            onToggleExpanded={() => setTerminalExpanded((v) => !v)}
+          />
+        )}
+      </div>
+
+      {/* ── Status bar ──────────────────────────────────────────── */}
+      <div className="flex shrink-0 items-center justify-between border-t border-slate-800/60 bg-violet-950/20 px-3 py-0.5 text-[11px] text-slate-500">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+            {plan.charAt(0).toUpperCase() + plan.slice(1)} Plan
+          </span>
+          <span className="hidden sm:inline">{currentFile}</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {user.isDemo && <span className="text-amber-600/80">Demo Mod</span>}
+          <span>Railway · WebSocket PTY</span>
+        </div>
       </div>
     </main>
+  );
+}
+
+// ── Small helper components ──────────────────────────────────────
+
+function MenuButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-slate-300 transition hover:bg-slate-800 hover:text-slate-100"
+    >
+      {children}
+    </button>
+  );
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="rounded bg-slate-700 px-1 py-0.5 text-[10px] text-slate-400">{children}</kbd>
+  );
+}
+
+function ToggleButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full rounded-lg px-2 py-1.5 text-xs transition ${
+        active
+          ? "bg-violet-600 text-white"
+          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ViewToggle({ label, active, onToggle }: { label: string; active: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-slate-300 transition hover:bg-slate-800"
+    >
+      <span>{label}</span>
+      <span className={`text-[10px] font-medium ${active ? "text-green-400" : "text-slate-600"}`}>
+        {active ? "Açık" : "Kapalı"}
+      </span>
+    </button>
   );
 }
