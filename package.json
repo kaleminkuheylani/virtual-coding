@@ -4,9 +4,13 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "bun run --hot server.ts",
+    "dev:web": "next dev",
+    "dev:backend": "bun run --hot backend/server.ts",
+    "dev:all": "bun x concurrently \"bun run dev:web\" \"bun run dev:backend\"",
     "build": "next build",
     "start": "NODE_ENV=production bun run server.ts",
-    "lint": "echo 'lint placeholder'",
+    "backend:start": "bun run backend/server.ts",
+    "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
