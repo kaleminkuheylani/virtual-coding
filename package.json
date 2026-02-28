@@ -4,6 +4,10 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "next dev",
+    "dev:web": "next dev",
+    "dev:backend": "bun run --hot backend/server.ts",
+    "dev:all": "bunx concurrently -n web,backend -c cyan,magenta \"bun run dev:web\" \"bun run dev:backend\"",
+    "backend:start": "bun run backend/server.ts",
     "lint": "echo 'lint placeholder'",
     "typecheck": "tsc --noEmit",
     "dev:ws": "bun run --hot backend/server.ts"
