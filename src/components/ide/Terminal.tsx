@@ -5,6 +5,7 @@ import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 
+// NOTE: This port must match PORT in mini-services/terminal/index.ts
 const TERMINAL_WS_PORT = 3004
 
 interface TerminalProps {
@@ -16,7 +17,6 @@ export function Terminal({ expanded, onToggleExpanded }: TerminalProps) {
   const terminalContainerRef = useRef<HTMLDivElement | null>(null);
   const terminalRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
 
   // Initialize terminal and connect to WebSocket shell server
@@ -78,7 +78,6 @@ export function Terminal({ expanded, onToggleExpanded }: TerminalProps) {
       `${protocol}//${window.location.host}/?XTransformPort=${TERMINAL_WS_PORT}`
     )
     ws.binaryType = "arraybuffer"
-    wsRef.current = ws
 
     ws.onopen = () => {
       setConnected(true)
@@ -114,17 +113,12 @@ export function Terminal({ expanded, onToggleExpanded }: TerminalProps) {
     });
     resizeObserver.observe(terminalContainerRef.current);
 
-    const onWindowResize = () => fitAddon.fit();
-    window.addEventListener("resize", onWindowResize);
-
     return () => {
-      window.removeEventListener("resize", onWindowResize);
       resizeObserver.disconnect();
       ws.close();
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
-      wsRef.current = null;
     };
   }, []);
 
