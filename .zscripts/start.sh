@@ -6,6 +6,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR"
 
+# Railway provides PORT env var for external traffic.
+# Save it for Caddy before Next.js overrides it.
+CADDY_PORT=${PORT:-81}
+export CADDY_PORT
+
 # 存储所有子进程的 PID
 pids=""
 
@@ -67,7 +72,9 @@ if [ -f "./next-service-dist/server.js" ]; then
     
     # 设置环境变量
     export NODE_ENV=production
-    export PORT=${PORT:-3000}
+    # Use fixed internal port 3000 for Next.js.
+    # Caddy listens on CADDY_PORT (Railway's external PORT) and proxies here.
+    export PORT=3000
     export HOSTNAME=${HOSTNAME:-0.0.0.0}
     
     # 后台启动 Next.js
