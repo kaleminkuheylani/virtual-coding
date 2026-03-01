@@ -120,3 +120,65 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Terminal styles */
+.terminal-shell .xterm {
+  height: 100%;
+  padding: 8px;
+}
+
+.terminal-shell .xterm-viewport {
+  overflow-y: auto !important;
+}
+
+.terminal-shell .xterm-screen {
+  font-family: "JetBrains Mono", "Fira Code", Menlo, Monaco, monospace;
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.5);
+}
+
+/* Resize handle styles */
+[data-panel-resize-handle-id] {
+  transition: background-color 0.2s;
+}
+
+[data-panel-resize-handle-id]:hover {
+  background-color: rgba(124, 58, 237, 0.3);
+}
+
+[data-panel-resize-handle-id]:active {
+  background-color: rgba(124, 58, 237, 0.5);
+}
+
+/* Animation for dirty indicator */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Selection styles */
+::selection {
+  background: rgba(124, 58, 237, 0.4);
+  color: inherit;
+}
