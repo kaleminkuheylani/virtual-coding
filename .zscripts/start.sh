@@ -90,7 +90,24 @@ if [ -f "./next-service-dist/server.js" ]; then
     else
         echo "✅ Next.js 服务器已启动 (PID: $NEXT_PID, Port: $PORT)"
     fi
-    
+
+    # Wait for Next.js to actually be ready to accept connections
+    echo "⏳ Waiting for Next.js to be ready on port $PORT..."
+    max_wait=60
+    waited=0
+    while [ $waited -lt $max_wait ]; do
+        if curl -sf "http://localhost:$PORT/" > /dev/null 2>&1; then
+            echo "✅ Next.js is ready!"
+            break
+        fi
+        sleep 1
+        waited=$((waited + 1))
+    done
+    if [ $waited -ge $max_wait ]; then
+        echo "❌ Next.js failed to become ready within ${max_wait}s"
+        exit 1
+    fi
+
     cd ../
 else
     echo "⚠️  未找到 Next.js 服务器文件: ./next-service-dist/server.js"
