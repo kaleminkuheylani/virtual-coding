@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
+
+const TERMINAL_WS_PORT = 3004
 
 interface TerminalProps {
   expanded: boolean;
@@ -14,9 +16,10 @@ export function Terminal({ expanded, onToggleExpanded }: TerminalProps) {
   const terminalContainerRef = useRef<HTMLDivElement | null>(null);
   const terminalRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
 
-  // Initialize terminal
+  // Initialize terminal and connect to WebSocket shell server
   useEffect(() => {
     if (!terminalContainerRef.current) return;
 
@@ -62,46 +65,49 @@ export function Terminal({ expanded, onToggleExpanded }: TerminalProps) {
     // Welcome message
     terminal.writeln("\x1b[1;35m╭─────────────────────────────────────╮\x1b[0m");
     terminal.writeln("\x1b[1;35m│\x1b[0m  \x1b[1;37mVirtual IDE Terminal\x1b[0m              \x1b[1;35m│\x1b[0m");
-    terminal.writeln("\x1b[1;35m│\x1b[0m  \x1b[90mReady for commands...\x1b[0m           \x1b[1;35m│\x1b[0m");
+    terminal.writeln("\x1b[1;35m│\x1b[0m  \x1b[90mConnecting to shell...\x1b[0m          \x1b[1;35m│\x1b[0m");
     terminal.writeln("\x1b[1;35m╰─────────────────────────────────────╯\x1b[0m");
     terminal.writeln("");
-    terminal.write("\x1b[1;32m➜\x1b[0m \x1b[1;34m~/workspace\x1b[0m $ ");
-
-    // Handle input
-    let currentLine = "";
-    terminal.onData((data) => {
-      const code = data.charCodeAt(0);
-
-      if (code === 13) {
-        // Enter
-        terminal.writeln("");
-        if (currentLine.trim()) {
-          handleCommand(currentLine.trim(), terminal);
-        } else {
-          terminal.write("\x1b[1;32m➜\x1b[0m \x1b[1;34m~/workspace\x1b[0m $ ");
-        }
-        currentLine = "";
-      } else if (code === 127) {
-        // Backspace
-        if (currentLine.length > 0) {
-          currentLine = currentLine.slice(0, -1);
-          terminal.write("\b \b");
-        }
-      } else if (code === 27) {
-        // Escape sequences (arrow keys, etc.)
-        // Ignore for now
-      } else if (code >= 32) {
-        // Printable characters
-        currentLine += data;
-        terminal.write(data);
-      }
-    });
 
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    // Simulate connection
-    setTimeout(() => setConnected(true), 500);
+    // Connect to terminal WebSocket server via Caddy's XTransformPort routing
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:"
+    const ws = new WebSocket(
+      `${protocol}//${window.location.host}/?XTransformPort=${TERMINAL_WS_PORT}`
+    )
+    ws.binaryType = "arraybuffer"
+    wsRef.current = ws
+
+    ws.onopen = () => {
+      setConnected(true)
+    }
+
+    ws.onclose = () => {
+      setConnected(false)
+      terminal.writeln("\r\n\x1b[1;31m[Connection closed]\x1b[0m")
+    }
+
+    ws.onerror = () => {
+      setConnected(false)
+      terminal.writeln("\r\n\x1b[1;31m[Connection error - is the terminal server running?]\x1b[0m")
+    }
+
+    ws.onmessage = (event: MessageEvent) => {
+      if (event.data instanceof ArrayBuffer) {
+        terminal.write(new Uint8Array(event.data))
+      } else {
+        terminal.write(event.data as string)
+      }
+    }
+
+    // Forward all key input to the shell
+    terminal.onData((data) => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(data)
+      }
+    })
 
     const resizeObserver = new ResizeObserver(() => {
       fitAddon.fit();
@@ -114,9 +120,11 @@ export function Terminal({ expanded, onToggleExpanded }: TerminalProps) {
     return () => {
       window.removeEventListener("resize", onWindowResize);
       resizeObserver.disconnect();
+      ws.close();
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
+      wsRef.current = null;
     };
   }, []);
 
@@ -173,54 +181,3 @@ export function Terminal({ expanded, onToggleExpanded }: TerminalProps) {
   );
 }
 
-// Simple command handler
-function handleCommand(cmd: string, terminal: XTerm) {
-  const parts = cmd.split(" ");
-  const command = parts[0];
-
-  switch (command) {
-    case "help":
-      terminal.writeln("\x1b[1;36mKullanılabilir komutlar:\x1b[0m");
-      terminal.writeln("  \x1b[33mhelp\x1b[0m     - Bu yardım mesajını göster");
-      terminal.writeln("  \x1b[33mclear\x1b[0m    - Terminali temizle");
-      terminal.writeln("  \x1b[33mls\x1b[0m       - Dosyaları listele");
-      terminal.writeln("  \x1b[33mpwd\x1b[0m      - Geçerli dizini göster");
-      terminal.writeln("  \x1b[33mecho\x1b[0m     - Mesaj yazdır");
-      terminal.writeln("  \x1b[33mdate\x1b[0m     - Tarih ve saat göster");
-      terminal.writeln("  \x1b[33mwhoami\x1b[0m   - Kullanıcı adını göster");
-      break;
-
-    case "clear":
-      terminal.clear();
-      break;
-
-    case "ls":
-      terminal.writeln("\x1b[1;34mREADME.md\x1b[0m  \x1b[1;32msrc/\x1b[0m  \x1b[1;32mcomponents/\x1b[0m  \x1b[1;32mhooks/\x1b[0m  \x1b[1;33mpackage.json\x1b[0m  \x1b[1;33mtsconfig.json\x1b[0m");
-      break;
-
-    case "pwd":
-      terminal.writeln("/home/user/workspace");
-      break;
-
-    case "echo":
-      terminal.writeln(parts.slice(1).join(" "));
-      break;
-
-    case "date":
-      terminal.writeln(new Date().toLocaleString("tr-TR"));
-      break;
-
-    case "whoami":
-      terminal.writeln("developer");
-      break;
-
-    case "":
-      break;
-
-    default:
-      terminal.writeln(`\x1b[1;31mkomut bulunamadı: ${command}\x1b[0m`);
-      terminal.writeln(`\x1b[90mYardım için 'help' yazın\x1b[0m`);
-  }
-
-  terminal.write("\x1b[1;32m➜\x1b[0m \x1b[1;34m~/workspace\x1b[0m $ ");
-}
