@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
-import type { PlanType } from "@/lib/plans";
-import { validateCommand } from "@/lib/security";
-import { resolveCommandShell } from "@/lib/shell";
+import type { PlanType } from "./plans";
+import { validateCommand } from "./security";
+import { resolveCommandShell } from "./shell";
 
 export async function executeCommand(command: string, plan: PlanType, cwd: string): Promise<{ stdout: string; stderr: string; code: number | null }> {
   const guard = validateCommand(command, plan);

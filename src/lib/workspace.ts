@@ -1,6 +1,6 @@
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { guardPathTraversal } from "@/lib/security";
+import { guardPathTraversal } from "./security";
 
 export const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT ?? "/workspace";
 
