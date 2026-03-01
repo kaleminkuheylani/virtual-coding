@@ -82,6 +82,7 @@ export function CodeEditor({
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
   const handleEditorWillMount: BeforeMount = (monaco) => {
+    // Custom dark theme
     monaco.editor.defineTheme("custom-dark", {
       base: "vs-dark",
       inherit: true,
@@ -96,17 +97,52 @@ export function CodeEditor({
         "editorCursor.foreground": "#7c3aed",
       },
     });
+
+    // TypeScript / JavaScript IntelliSense
+    const tsCompilerOptions: Parameters<
+      typeof monaco.languages.typescript.typescriptDefaults.setCompilerOptions
+    >[0] = {
+      target: monaco.languages.typescript.ScriptTarget.ESNext,
+      module: monaco.languages.typescript.ModuleKind.ESNext,
+      moduleResolution:
+        monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+      allowNonTsExtensions: true,
+      allowJs: true,
+      checkJs: true,
+      noEmit: true,
+      esModuleInterop: true,
+      jsx: monaco.languages.typescript.JsxEmit.ReactJSX,
+      strict: false,
+    };
+    monaco.languages.typescript.typescriptDefaults.setCompilerOptions(
+      tsCompilerOptions
+    );
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions(
+      tsCompilerOptions
+    );
+
+    monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: false,
+      noSyntaxValidation: false,
+    });
+    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: false,
+      noSyntaxValidation: false,
+    });
+
+    // Eager worker load for faster first-open IntelliSense
+    monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
+    monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
   };
 
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
 
-    // Ctrl+S ile kaydet - otomatik kayıt YOK!
+    // Ctrl+S ile kaydet — otomatik kayıt YOK
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       onSave();
     });
 
-    // Focus editor on mount
     editor.focus();
   };
 
@@ -137,7 +173,6 @@ export function CodeEditor({
       }`}
       style={{ minHeight: height }}
     >
-      {/* Dirty indicator */}
       {isDirty && (
         <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5 rounded-md bg-amber-500/20 px-2 py-1 text-xs text-amber-400">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -174,6 +209,17 @@ export function CodeEditor({
             bracketPairs: true,
             indentation: true,
           },
+          // Autocomplete & IntelliSense
+          quickSuggestions: { other: true, comments: false, strings: true },
+          suggestOnTriggerCharacters: true,
+          parameterHints: { enabled: true },
+          formatOnType: true,
+          formatOnPaste: true,
+          snippetSuggestions: "top",
+          wordBasedSuggestions: "matchingDocuments",
+          acceptSuggestionOnEnter: "on",
+          tabCompletion: "on",
+          inlayHints: { enabled: "on" },
         }}
       />
     </div>
