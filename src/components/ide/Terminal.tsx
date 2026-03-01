@@ -5,18 +5,17 @@ import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 
+// NOTE: This port must match PORT in mini-services/terminal/index.ts
 const TERMINAL_WS_PORT = 3004
 
 interface TerminalProps {
-  expanded: boolean;
-  onToggleExpanded: () => void;
+  onClose: () => void;
 }
 
-export function Terminal({ expanded, onToggleExpanded }: TerminalProps) {
+export function Terminal({ onClose }: TerminalProps) {
   const terminalContainerRef = useRef<HTMLDivElement | null>(null);
   const terminalRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
   const [connected, setConnected] = useState(false);
 
   // Initialize terminal and connect to WebSocket shell server
@@ -78,7 +77,6 @@ export function Terminal({ expanded, onToggleExpanded }: TerminalProps) {
       `${protocol}//${window.location.host}/?XTransformPort=${TERMINAL_WS_PORT}`
     )
     ws.binaryType = "arraybuffer"
-    wsRef.current = ws
 
     ws.onopen = () => {
       setConnected(true)
@@ -109,35 +107,25 @@ export function Terminal({ expanded, onToggleExpanded }: TerminalProps) {
       }
     })
 
+    // Resize whenever the container changes size (e.g. panel drag)
     const resizeObserver = new ResizeObserver(() => {
       fitAddon.fit();
     });
     resizeObserver.observe(terminalContainerRef.current);
 
-    const onWindowResize = () => fitAddon.fit();
-    window.addEventListener("resize", onWindowResize);
-
     return () => {
-      window.removeEventListener("resize", onWindowResize);
       resizeObserver.disconnect();
       ws.close();
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
-      wsRef.current = null;
     };
   }, []);
 
-  // Resize on expand/collapse
-  useEffect(() => {
-    const timer = window.setTimeout(() => fitAddonRef.current?.fit(), 50);
-    return () => window.clearTimeout(timer);
-  }, [expanded]);
-
   return (
-    <section className="flex flex-col rounded-xl border border-slate-800 bg-slate-900/70 shadow-lg shadow-slate-950/30 overflow-hidden">
+    <section className="flex h-full flex-col border-t border-slate-800 bg-slate-900/70 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-800/50 bg-slate-900/50">
+      <div className="flex shrink-0 items-center justify-between px-3 py-2 border-b border-slate-800/50 bg-slate-900/50">
         <div className="flex items-center gap-2">
           <svg
             className="h-4 w-4 text-slate-400"
@@ -161,23 +149,21 @@ export function Terminal({ expanded, onToggleExpanded }: TerminalProps) {
           />
         </div>
         <button
-          onClick={onToggleExpanded}
+          onClick={onClose}
           className="rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300 transition hover:border-slate-500 hover:text-slate-100"
+          title="Terminali kapat"
         >
-          {expanded ? "Daralt" : "Genişlet"}
+          Kapat
         </button>
       </div>
 
-      {/* Terminal container */}
+      {/* Terminal container — fills remaining panel height */}
       <div
         ref={terminalContainerRef}
         onClick={() => terminalRef.current?.focus()}
-        className={`terminal-shell w-full bg-slate-950 ${
-          expanded ? "h-64" : "h-40"
-        }`}
+        className="min-h-0 flex-1 w-full bg-slate-950"
         style={{ padding: "8px" }}
       />
     </section>
   );
 }
-

@@ -1,5 +1,6 @@
 import { spawn } from 'child_process'
 
+// NOTE: This port must match TERMINAL_WS_PORT in src/components/ide/Terminal.tsx
 const PORT = 3004
 
 // Map WebSocket instances to their shell processes
@@ -26,13 +27,11 @@ const server = Bun.serve({
 
       shells.set(ws, shell)
 
-      shell.stdout?.on('data', (data: Buffer) => {
-        try { ws.send(data) } catch {}
-      })
-
-      shell.stderr?.on('data', (data: Buffer) => {
-        try { ws.send(data) } catch {}
-      })
+      const forward = (data: Buffer) => {
+        try { ws.send(data) } catch (err) { console.error('send error:', err) }
+      }
+      shell.stdout?.on('data', forward)
+      shell.stderr?.on('data', forward)
 
       shell.on('close', () => {
         try { ws.close() } catch {}
@@ -54,6 +53,9 @@ const server = Bun.serve({
     close(ws) {
       const shell = shells.get(ws)
       if (shell) {
+        shells.delete(ws)
+        shell.stdout?.removeAllListeners()
+        shell.stderr?.removeAllListeners()
         shell.kill()
       }
     },
@@ -61,17 +63,16 @@ const server = Bun.serve({
     error(ws, error) {
       console.error('WebSocket error:', error)
       const shell = shells.get(ws)
-      if (shell) shell.kill()
+      if (shell) {
+        shells.delete(ws)
+        shell.kill()
+      }
     },
   },
 })
 
 console.log(`Terminal WebSocket server running on port ${PORT}`)
 
-process.on('SIGTERM', () => {
-  process.exit(0)
-})
-
-process.on('SIGINT', () => {
-  process.exit(0)
-})
+const shutdown = () => process.exit(0)
+process.on('SIGTERM', shutdown)
+process.on('SIGINT', shutdown)

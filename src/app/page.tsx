@@ -261,7 +261,6 @@ export default function HomePage() {
   const [showFileTree, setShowFileTree] = useState(true);
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [showTerminal, setShowTerminal] = useState(true);
-  const [terminalExpanded, setTerminalExpanded] = useState(true);
   const [editorPreferences, setEditorPreferences] = useState<EditorPreferences>({
     theme: "vs-dark",
     fontSize: 13,
@@ -325,6 +324,13 @@ export default function HomePage() {
 
   const updateFontFamily = (fontFamily: string) => {
     setEditorPreferences((prev) => ({ ...prev, fontFamily }));
+  };
+
+  const toggleFontStyle = () => {
+    setEditorPreferences((prev) => ({
+      ...prev,
+      fontStyle: prev.fontStyle === "italic" ? "normal" : "italic",
+    }));
   };
 
   return (
@@ -406,6 +412,19 @@ export default function HomePage() {
                       onChange={(e) => updateFontSize(Number(e.target.value))}
                       className="w-full accent-violet-500"
                     />
+                    <div className="flex items-center justify-between px-1 mt-1">
+                      <label className="text-[11px] text-slate-400">İtalik</label>
+                      <button
+                        onClick={toggleFontStyle}
+                        className={`rounded px-2 py-0.5 text-[10px] font-medium transition ${
+                          editorPreferences.fontStyle === "italic"
+                            ? "bg-violet-600 text-white"
+                            : "bg-slate-700 text-slate-400 hover:bg-slate-600"
+                        }`}
+                      >
+                        {editorPreferences.fontStyle === "italic" ? "Açık" : "Kapalı"}
+                      </button>
+                    </div>
                   </div>
                   {/* Panels */}
                   <div>
@@ -460,7 +479,7 @@ export default function HomePage() {
       </header>
 
       {/* Main content with Resizable Panels */}
-      <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden p-1.5">
+      <div className="flex min-h-0 flex-1 overflow-hidden p-1.5">
         <ResizablePanelGroup direction="horizontal" className="flex-1">
           {/* File Explorer Panel */}
           {showFileTree && (
@@ -477,20 +496,33 @@ export default function HomePage() {
             </>
           )}
 
-          {/* Editor Panel */}
+          {/* Editor + Terminal — vertical split */}
           <ResizablePanel defaultSize={showAIPanel ? 55 : 85} minSize={30}>
-            <CodeEditor
-              value={content}
-              onChange={handleContentChange}
-              onSave={saveFile}
-              language={langFromPath(currentFile)}
-              isDirty={isDirty}
-              preferences={editorPreferences}
-              height="100%"
-            />
+            <ResizablePanelGroup direction="vertical">
+              <ResizablePanel defaultSize={showTerminal ? 65 : 100} minSize={25}>
+                <CodeEditor
+                  value={content}
+                  onChange={handleContentChange}
+                  onSave={saveFile}
+                  language={langFromPath(currentFile)}
+                  isDirty={isDirty}
+                  preferences={editorPreferences}
+                  height="100%"
+                />
+              </ResizablePanel>
+
+              {showTerminal && (
+                <>
+                  <ResizableHandle withHandle />
+                  <ResizablePanel defaultSize={35} minSize={15} maxSize={70}>
+                    <Terminal onClose={() => setShowTerminal(false)} />
+                  </ResizablePanel>
+                </>
+              )}
+            </ResizablePanelGroup>
           </ResizablePanel>
 
-          {/* Right Panel (AI + Profile) - RESIZABLE */}
+          {/* Right Panel (AI + Profile) */}
           {showAIPanel && (
             <>
               <ResizableHandle withHandle />
@@ -505,14 +537,6 @@ export default function HomePage() {
             </>
           )}
         </ResizablePanelGroup>
-
-        {/* Terminal */}
-        {showTerminal && (
-          <Terminal
-            expanded={terminalExpanded}
-            onToggleExpanded={() => setTerminalExpanded((v) => !v)}
-          />
-        )}
       </div>
 
       {/* Status bar */}
