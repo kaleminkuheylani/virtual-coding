@@ -1,4 +1,4 @@
-import { getPlan, type PlanType } from "@/lib/plans";
+import { getPlan, type PlanType } from "./plans";
 
 const HARDBLOCK_PATTERNS = [/\bnpm\b/, /\bnpx\b/, /\byarn\b/, /\bpnpm\b/, /^pip(\s|$)/, /\bpython\s+-m\s+pip\b/, /\bpip3\b/, /\bsudo\b/, /rm\s+-rf\s+\//];
 const UNSAFE_INSTALL_FLAG_PATTERNS = [/(^|\s)--global(\s|$)/, /(^|\s)-g(\s|$)/, /(^|\s)--system(\s|$)/, /(^|\s)--break-system-packages(\s|$)/];
